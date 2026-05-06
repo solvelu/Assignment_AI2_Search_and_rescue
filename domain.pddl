@@ -5,11 +5,9 @@
 ;remove requirements that are not needed
 (:requirements :strips :typing)
 
-(:types robot room victim;todo: enumerate types and their hierarchy here, e.g. car truck bus - vehicle
+(:types robot room victim
 )
 
-; un-comment following line if constants are needed
-;(:constants )
 
 (:predicates 
     (at ?r - robot ?loc - room)
