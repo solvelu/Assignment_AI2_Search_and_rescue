@@ -1,13 +1,17 @@
-;Header and description
+;Domain: Single robot rescue
+;Description: Search and rescue domain for a single robot operating in a building
+;composed of connected rooms. The robot can move between rooms, stabilize injured
+;victims, pick them up once stabilized and drop them off at a safe location. 
+
+;Key concepts: 
+; - robot location and room connectivity
+; - victim location, injury status and stabilization
+; - carrying victims and dropping them off at safe rooms
 
 (define (domain rescue_single_robot)
 
-;remove requirements that are not needed
 (:requirements :strips :typing)
-
-(:types robot room victim
-)
-
+(:types robot room victim)
 
 (:predicates 
     (at ?r - robot ?loc - room)
@@ -36,7 +40,7 @@
     )
 )
 
-;Stabilization
+; Stabilization
 (:action stabilize
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and 
@@ -50,7 +54,7 @@
     )
 )
 
-;Pick up victim
+; Pick up victim
 (:action pickup
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and 
@@ -64,7 +68,7 @@
     )
 )
 
-;Drop at safe location
+; Drop at safe location
 (:action drop
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and 

@@ -20,7 +20,7 @@
 
 (:goal (and
     (victim-at v1 roomA)
-    (stabilized v1)
-))
+    (stabilized v1))
+)
 
 )

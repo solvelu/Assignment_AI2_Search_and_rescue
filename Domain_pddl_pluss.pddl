@@ -1,3 +1,17 @@
+;Domain: Time-critical Rescue (PDDL+)
+
+;Description: A single rescue robot operates in a known building with connected rooms and one injured victim. 
+;The victim's health continously degrades over time while they remain injured, and a PDDL+ event makes the victim
+;unrecoverable if health reaches zero. 
+
+;The robot must plant the correct sequence of actions (move, stabilize, pickup, drop) but also schedule
+;them so the victim is stabilized and transported before the time runs out. 
+
+;Key concepts: 
+; - continuous health decay of the victim
+; - event 'victim-death' represents critical failure
+; - timing affects rescue feasibility by making some plans impossible if they take too long
+
 (define (domain rescue_time)
 
 ;remove requirements that are not needed
@@ -57,7 +71,8 @@
         (connected ?from ?to))
     :effect (and 
         (not (at ?r ?from)) 
-        (at ?r ?to))
+        (at ?r ?to)
+        )
 )
 
 (:action pickup
@@ -65,6 +80,7 @@
     :precondition (and
       (at ?r ?loc)
       (victim-at ?v ?loc)
+      (alive ?v) 
       (stabilized ?v))
     :effect (and 
         (carrying ?r ?v)
@@ -79,5 +95,6 @@
       (safe ?loc))
     :effect (victim-at ?v ?loc)
 )
+
 )
 
