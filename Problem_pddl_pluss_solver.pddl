@@ -1,9 +1,9 @@
-(define (problem simple_rescue_pluss) 
-(:domain rescue_time)
+(define (problem simple_rescue_pluss_solver)
+(:domain rescue_time_solver)
 (:objects
     r1 - robot
     v1 - victim
-    roomA roomD - room 
+    roomA roomD - room
 )
 
 (:init
@@ -17,7 +17,7 @@
 
     (safe roomA)
 
-    (= (health v1) 10)
+    (= (health v1) 6)
 )
 
 (:metric minimize (total-time))
@@ -26,5 +26,4 @@
     (victim-at v1 roomA)
     (stabilized v1)
 ))
-
 )

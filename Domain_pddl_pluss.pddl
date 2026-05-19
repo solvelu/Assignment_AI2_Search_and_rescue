@@ -1,21 +1,18 @@
 ;Domain: Time-critical Rescue (PDDL+)
 
-;Description: A single rescue robot operates in a known building with connected rooms and one injured victim. 
-;The victim's health continously degrades over time while they remain injured, and a PDDL+ event makes the victim
-;unrecoverable if health reaches zero. 
+;Description: A single rescue robot operates in a known building with connected rooms and one injured victim.
+;Victim health decreases in discrete time steps, and a death event is triggered when health reaches zero.
 
-;The robot must plant the correct sequence of actions (move, stabilize, pickup, drop) but also schedule
-;them so the victim is stabilized and transported before the time runs out. 
+;The robot must plan a sequence of actions that finishes rescue before the victim becomes unrecoverable.
 
 ;Key concepts: 
-; - continuous health decay of the victim
+; - discrete health decay when actions or wait steps occur
 ; - event 'victim-death' represents critical failure
-; - timing affects rescue feasibility by making some plans impossible if they take too long
+; - timing affects rescue feasibility because actions consume health
 
 (define (domain rescue_time)
 
-;remove requirements that are not needed
-(:requirements :strips :fluents :typing :negative-preconditions)
+(:requirements :strips :durative-actions :fluents :typing :negative-preconditions :continuous-effects)
 
 (:types robot room victim)
 
@@ -28,7 +25,6 @@
     (safe ?loc - room)
     (alive ?v - victim)
 )
-
 
 (:functions 
     (health ?v - victim)
@@ -54,47 +50,50 @@
     :effect (not (alive ?v))
 )
 
-  ;Actions (same as before, shortened) 
 (:action stabilize
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and
-      (at ?r ?loc)
-      (victim-at ?v ?loc)
-      (alive ?v))
-    :effect (stabilized ?v)
+        (at ?r ?loc)
+        (victim-at ?v ?loc)
+        (alive ?v))
+    :effect (and
+        (stabilized ?v))
 )
 
 (:action move
-    :parameters (?r - robot ?from ?to - room)
+    :parameters (?r - robot ?from ?to - room ?v - victim)
     :precondition (and 
         (at ?r ?from) 
-        (connected ?from ?to))
+        (connected ?from ?to)
+        (alive ?v))
     :effect (and 
         (not (at ?r ?from)) 
         (at ?r ?to)
-        )
+        (decrease (health ?v) 1))
 )
 
 (:action pickup
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and
-      (at ?r ?loc)
-      (victim-at ?v ?loc)
-      (alive ?v) 
-      (stabilized ?v))
+        (at ?r ?loc)
+        (victim-at ?v ?loc)
+        (alive ?v)
+        (stabilized ?v))
     :effect (and 
         (carrying ?r ?v)
-        (not (victim-at ?v ?loc)))
+        (not (victim-at ?v ?loc))
+        (decrease (health ?v) 1))
 )
 
 (:action drop
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and
-      (at ?r ?loc)
-      (carrying ?r ?v)
-      (safe ?loc))
-    :effect (victim-at ?v ?loc)
+        (at ?r ?loc)
+        (carrying ?r ?v)
+        (safe ?loc)
+        (alive ?v))
+    :effect (and
+        (victim-at ?v ?loc)
+        (decrease (health ?v) 1))
 )
-
 )
-
