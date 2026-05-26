@@ -1,48 +1,76 @@
-; Simple rescue — FEASIBLE (health = 20)
+; Problem: Time-Critical Rescue (PDDL+)
+; Domain:  rescue_time (Domain_pddl_pluss.pddl)
 ;
-; Health budget (decays 1.0/sec while not stabilized):
-;   t=0  start-move
-;   t=3  move-complete  -> health = 20 - 3 = 17
-;   t=3  start-stabilize
-;   t=7  stabilize-complete -> health = 17 - 4 = 13  (decay stops)
-;   t=7  pickup
-;   t=7  start-move
-;   t=10 move-complete  -> health = 13  (no decay, already stabilized)
-;   t=10 drop           -> RESCUED, health = 13  ALIVE ✓
+; Scenario:
+;   Two rooms (roomA, roomD). Robot starts in roomA; victim is in roomD.
+;   roomA is the safe exit. move-duration = 3 s, stabilize-duration = 4 s.
 ;
-; To make INFEASIBLE: change health to 6.0
-;   t=3  move-complete -> health = 3
-;   t=7  stabilize would finish but health hits 0 at t=6 -> death event fires
-;   -> victim-dead blocks all actions -> planner reports unsolvable
+; Health budget (health decays at 1.0/sec while victim is alive and unstabilized):
+;
+;   t =  0.0  start-move r1 roomA -> roomD       health = 8.0
+;   t =  3.0  move-complete (arrive roomD)        health = 8 - 3 = 5.0
+;   t =  3.0  start-stabilize r1 v1              health = 5.0
+;   t =  7.0  stabilize-complete                 health = 5 - 4 = 1.0  (decay stops)
+;   t =  7.0  pickup r1 v1                       health = 1.0
+;   t =  7.0  start-move r1 roomD -> roomA       health = 1.0  (no decay; stabilized)
+;   t = 10.0  move-complete (arrive roomA)        health = 1.0
+;   t = 10.0  drop r1 v1 roomA                   health = 1.0  RESCUED ✓
+;
+; The victim survives with exactly 1.0 health unit remaining.
+;
+; To make the problem INFEASIBLE: set health to 6.0.
+;   At t = 3 health = 3.0; stabilization would take until t = 7, but
+;   health reaches 0.5 at t ≈ 5.5, so the victim-death event fires first
+;   and victim-dead blocks all further actions -> planner reports UNSOLVABLE.
+;
+; Run command:
+;   java -jar enhsp-20.jar \
+;        -o Domain_pddl_pluss.pddl \
+;        -f Problem_pddl_pluss.pddl \
+;        -planner opt-blind \
+;        -delta 0.5
 
 (define (problem simple_rescue_plus)
 (:domain rescue_time)
 
 (:objects
-    r1 - robot
-    v1 - victim
+    r1          - robot
+    v1          - victim
     roomA roomD - room
 )
 
 (:init
+    ; Robot starts at the safe exit room
     (at r1 roomA)
+
+    ; Single bidirectional corridor
     (connected roomA roomD)
     (connected roomD roomA)
+
+    ; Victim is alive and at the far room
     (victim-at v1 roomD)
     (alive v1)
+
+    ; Safe drop-off point
     (safe roomA)
 
-    (= (health v1)              8.0)
-    (= (move-progress r1)        0.0)
-    (= (stabilize-progress r1)   0.0)
-    (= (move-duration)           3.0)
-    (= (stabilize-duration)      4.0)
+    ; Initial health — 8.0 gives a 1.0-unit survival margin.
+    ; Change to 6.0 to observe the infeasible (victim-death) case.
+    (= (health v1)             8.0)
+
+    ; Task progress counters start at zero
+    (= (move-progress r1)      0.0)
+    (= (stabilize-progress r1) 0.0)
+
+    ; Task durations (seconds)
+    (= (move-duration)         3.0)
+    (= (stabilize-duration)    4.0)
 )
 
 (:goal (and
-    (victim-at v1 roomA)
-    (stabilized v1)
-    (alive v1)
+    (victim-at v1 roomA)    ; victim delivered to safe exit
+    (stabilized v1)         ; victim was stabilized before transport
+    (alive v1)              ; victim survived the rescue
 ))
 
 )
