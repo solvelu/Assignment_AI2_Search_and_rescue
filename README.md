@@ -1,4 +1,4 @@
-# Assignment D4-V1 – Search and Rescue: Single Robot, Known Environment
+# Assignment D4-V1 - Search and Rescue: Single Robot, Known Environment
 
 ## Scenario
 
@@ -16,21 +16,21 @@ The environment is static and no hazards evolve over time (in the classical mode
 
 ```
 .
-├── domain.pddl                  # Classical STRIPS domain (Q1)
-├── problem_simple_rescue.pddl   # Q1 – simple instance (2 rooms, direct path)
-├── problem_complex_rescue.pddl  # Q1 – complex instance (4 rooms, longer path)
-├── Domain_pddl_pluss.pddl       # PDDL+ domain with processes and events (Q2)
-├── Problem_pddl_pluss.pddl      # Q2 – time-critical instance with health decay
-└── README.md
++-- domain.pddl                  # Classical STRIPS domain (Q1)
++-- problem_simple_rescue.pddl   # Q1 - simple instance (2 rooms, direct path)
++-- problem_complex_rescue.pddl  # Q1 - complex instance (4 rooms, longer path)
++-- Domain_pddl_pluss.pddl       # PDDL+ domain with processes and events (Q2)
++-- Problem_pddl_pluss.pddl      # Q2 - time-critical instance with health decay
++-- README.md
 ```
 
 ---
 
-## Q1 – Classical PDDL Model
+## Q1 - Classical PDDL Model
 
 ### Domain design (`domain.pddl`)
 
-The domain models four actions that must be composed in a specific order. That order is **not hard-coded** — it emerges naturally from the preconditions of each action:
+The domain models four actions that must be composed in a specific order. That order is **not hard-coded** -- it emerges naturally from the preconditions of each action:
 
 | Action | Key preconditions | Key effects |
 |---|---|---|
@@ -61,7 +61,7 @@ Two rooms (`roomA`, `roomB`). Robot starts in `roomA`, victim is in `roomB`, saf
 
 #### Complex rescue (`problem_complex_rescue.pddl`)
 
-Four rooms in a linear chain: `roomA – roomB – roomC – roomD`. The victim is in `roomD`, the safe exit is `roomA`. The robot must traverse three corridor segments in each direction.
+Four rooms in a linear chain: `roomA - roomB - roomC - roomD`. The victim is in `roomD`, the safe exit is `roomA`. The robot must traverse three corridor segments in each direction.
 
 **Resulting plan:**
 ```
@@ -78,7 +78,7 @@ Four rooms in a linear chain: `roomA – roomB – roomC – roomD`. The victim 
 
 ---
 
-## Q2 – PDDL+ Model with Temporal Dynamics
+## Q2 - PDDL+ Model with Temporal Dynamics
 
 ### Domain design (`Domain_pddl_pluss.pddl`)
 
@@ -104,9 +104,9 @@ The `victim-dead` flag is checked as a negative precondition on every action. On
 
 #### Numeric functions
 
-- `health` — victim's remaining survivability (decays continuously)
-- `move-progress` / `stabilize-progress` — internal clocks for in-progress tasks
-- `move-duration` / `stabilize-duration` — configurable task durations (set in the problem file)
+- `health` -- victim's remaining survivability (decays continuously)
+- `move-progress` / `stabilize-progress` -- internal clocks for in-progress tasks
+- `move-duration` / `stabilize-duration` -- configurable task durations (set in the problem file)
 
 ### Problem instance (`Problem_pddl_pluss.pddl`)
 
@@ -121,9 +121,9 @@ Two rooms (`roomA`, `roomD`). Durations: move = 3 s, stabilize = 4 s.
 | t = 3 | `start-stabilize` | 5.0 |
 | t = 7 | `stabilize-complete` | 1.0 (decayed 4.0 more) |
 | t = 7 | `pickup` + `start-move` | 1.0 (decay stopped) |
-| t = 10 | `move-complete` + `drop` | 1.0 ✓ **RESCUED** |
+| t = 10 | `move-complete` + `drop` | 1.0 -- RESCUED |
 
-The victim survives with health = 1.0. Setting the initial health to 6.0 causes death at t ≈ 6 (before stabilization completes), making the problem unsolvable.
+The victim survives with health = 1.0. Setting the initial health to 6.0 causes death at t = 6 (before stabilization completes), making the problem unsolvable.
 
 **Resulting plan:**
 ```
@@ -140,11 +140,7 @@ The victim survives with health = 1.0. Setting the initial health to 6.0 causes 
 ### How to run (PDDL+)
 
 ```bash
-java -jar enhsp-20.jar \
-     -o Domain_pddl_pluss.pddl \
-     -f Problem_pddl_pluss.pddl \
-     -planner opt-blind \
-     -delta 0.5
+java -jar enhsp-20.jar -o Domain_pddl_pluss.pddl -f Problem_pddl_pluss.pddl -planner opt-blind -delta 0.5
 ```
 
 ---
@@ -153,34 +149,58 @@ java -jar enhsp-20.jar \
 
 ### Modelling choices and abstractions
 
-The domain deliberately separates navigation, stabilization, and transport into distinct actions rather than collapsing them into a single "rescue" action. This separation means the task ordering constraint — you must stabilize before picking up, and must be co-located to stabilize — is expressed entirely through preconditions. The planner discovers the correct sequence rather than being given it, which makes the model genuinely general: it would produce a valid plan for any room layout and any victim location without modification.
+The domain deliberately separates navigation, stabilization, and transport into distinct actions rather than collapsing them into a single "rescue" action. This separation means the task ordering constraint -- stabilize before pickup, co-location required for stabilization -- is expressed entirely through preconditions. The planner discovers the correct sequence rather than being given it, making the model general for any room layout and victim placement.
 
-The choice to model victim state as a pair of predicates (`injured` / `stabilized` in Q1; `alive` / `victim-dead` in Q2) rather than a single multi-valued fluent keeps the representation simple and compatible with standard STRIPS planners. It does, however, mean that partial states (e.g., a victim who is being stabilized but is not yet stable) cannot be represented in Q1 — this is one of the abstractions described below.
+The choice to model victim state as a pair of predicates (`injured` / `stabilized` in Q1; `alive` / `victim-dead` in Q2) rather than a single multi-valued fluent keeps the representation simple and compatible with standard STRIPS planners. It does however mean that partial states (e.g. a victim mid-stabilization) cannot be represented in Q1 -- this is one of the abstractions discussed below.
+
+---
+
+### Discussion point 1: Differences between discrete and continuous energy (health) modelling
+
+In the **classical Q1 model**, victim health is implicit. The victim is either `injured` or `stabilized`, and there is no health value that changes over time. The planner reasons purely over discrete state transitions, and any valid sequence of actions that achieves the goal is acceptable regardless of how long it takes. A plan requiring 100 moves is treated identically to one requiring 3 -- time has no cost.
+
+In the **PDDL+ Q2 model**, health is an explicit numeric fluent that decreases continuously via a process running in parallel with the robot's actions. This changes the nature of planning fundamentally:
+
+- **Time is a resource.** Every second the robot spends moving costs the victim health. The planner must find not just a logically correct sequence but a fast enough one.
+- **Plans can become invalid mid-execution.** A plan that is valid at t = 0 may be invalidated at t = 6 if the robot has not yet stabilized the victim. The `victim-death` event represents this continuous invalidation risk.
+- **Some logically valid plans are physically infeasible.** With health = 6.0, the sequence move -> stabilize -> pickup -> move -> drop is logically correct but infeasible because the victim dies before stabilization completes. The classical model cannot distinguish this case; the PDDL+ model correctly identifies it as unsolvable.
+- **Processes run independently of the robot.** Health decays whether or not the robot is doing anything useful. This models the real-world property that a victim's condition does not pause while the robot is navigating.
+
+---
+
+### Discussion point 2: Modelling temporal urgency and differences between static and time-critical planning
+
+**In the classical model**, the environment is static and only the discrete ordering of actions matters. There is no pressure to act quickly -- the planner can insert arbitrary delays between actions without any consequence to the goal. Temporal urgency simply cannot be expressed.
+
+**In the PDDL+ model**, temporal urgency is modelled through two mechanisms working together:
+
+1. The `health-decay` process creates a continuous deadline -- every second of delay directly reduces the victim's survivability.
+2. The `victim-death` event acts as a hard cutoff -- once health reaches zero, the `victim-dead` flag blocks all further actions and the plan is declared unsolvable.
+
+This combination means the planner is forced to find a solution that is both logically correct and time-bounded. The feasibility boundary is concrete and demonstrable: with move-duration = 3 s and stabilize-duration = 4 s, a starting health of 8.0 is feasible (1.0 health unit remaining at rescue) while 6.0 is not (victim dies at t = 6, before stabilization at t = 7 completes).
+
+The structural difference between the two planning paradigms is therefore:
+
+| | Static planning (Q1) | Time-critical planning (Q2) |
+|---|---|---|
+| Environment | Fixed, discrete | Continuously changing |
+| Goal validity | Depends only on action order | Depends on action order AND timing |
+| Failure mode | No valid action sequence exists | Valid sequence exists but takes too long |
+| Planner requirement | Logical search over states | Reasoning over continuous numeric change |
+
+---
 
 ### Limitations of the abstractions
 
 **Q1 (classical model):**
-- **No time or urgency.** All actions are instantaneous and cost-free. A plan that takes 100 moves is treated identically to one that takes 3. This is appropriate for correctness checking but not for real deployment.
-- **Single victim, single robot.** The domain does not scale to multi-victim or multi-robot scenarios without significant extension.
-- **Binary victim state.** A victim is either injured or stabilized — there is no representation of deterioration during the rescue, partial stabilization, or re-injury.
-- **No partial observability.** The room graph and victim location are fully known at planning time, which does not reflect the uncertainty typical of real disaster environments.
+- **No time or urgency.** All actions are instantaneous. This is appropriate for correctness checking but not real deployment.
+- **Single victim, single robot.** The domain does not scale without significant extension.
+- **Binary victim state.** No representation of deterioration during rescue, partial stabilization, or re-injury.
+- **No partial observability.** The room graph and victim location are fully known at planning time, which does not reflect real disaster environments.
 
 **Q2 (PDDL+ model):**
-- **Simplified health model.** Health decays linearly at a fixed rate. Real physiological deterioration is non-linear and depends on injury type, environmental conditions, and elapsed time.
-- **Fixed task durations.** `move-duration` and `stabilize-duration` are constants. In reality, travel time depends on distance and terrain, and stabilization time depends on injury severity.
-- **Death is a hard threshold.** The `victim-death` event fires at health ≤ 0.5, which is a proxy for a real critical threshold. There is no modelling of a "critical but survivable" intermediate state.
-- **No robot energy or resource constraints.** The robot can act indefinitely without recharging or resupply.
-- **Discrete time steps.** The ENHSP planner operates with a configurable `delta` (here 0.5 s). Events that should fire between two steps may fire slightly late, introducing small numeric errors. A smaller delta increases accuracy at the cost of computation time.
-
-### Differences between discrete and continuous energy (health) modelling
-
-In the classical Q1 model, victim health is implicit — the victim is either `injured` or `stabilized`, and there is no notion of a health value that changes over time. The planner reasons purely over discrete state transitions, and any valid sequence of actions that achieves the goal is acceptable regardless of how long it takes.
-
-In the PDDL+ model, health is an explicit numeric fluent that decreases continuously via a process running in parallel with the robot's actions. This changes the nature of planning fundamentally:
-
-- **Time is a resource.** Every second the robot spends moving or waiting costs the victim health. The planner must find not just a logically correct sequence but a *fast enough* one.
-- **Plans can become invalid mid-execution.** A plan that is valid at t = 0 (victim alive, health > 0) may be invalidated by t = 6 if the robot has not yet stabilized the victim. The `victim-death` event represents this continuous invalidation risk.
-- **Some logically valid plans are infeasible.** With health = 6.0, the sequence move → stabilize → pickup → move → drop is logically correct (it satisfies all preconditions and achieves the goal) but physically infeasible because the victim dies before stabilization completes. The classical model cannot distinguish this case; the PDDL+ model correctly identifies it as unsolvable.
-- **Process/event structure is richer than action-only planning.** Processes run independently of the robot's decisions — health decays whether or not the robot is doing anything useful. This models the real-world property that a victim's condition does not pause while a robot is navigating.
-
-In summary, the Q1 model is appropriate for verifying that a rescue sequence is logically possible. The Q2 model is needed whenever timing constraints, urgency, or continuous environmental change must be respected — which is the realistic case in any actual search-and-rescue deployment.
+- **Simplified health model.** Health decays linearly at a fixed rate. Real physiological deterioration is non-linear and depends on injury type and environment.
+- **Fixed task durations.** Travel time and stabilization time are constants. In reality both depend on terrain, distance, and injury severity.
+- **Death is a hard threshold.** There is no modelling of a critical-but-survivable intermediate state between healthy and dead.
+- **No robot resource constraints.** The robot can act indefinitely without recharging or resupply.
+- **Discrete time steps.** ENHSP operates with a configurable delta (here 0.5 s). Events that should fire between steps may fire slightly late, introducing small numeric errors. A smaller delta increases accuracy at the cost of computation time.
