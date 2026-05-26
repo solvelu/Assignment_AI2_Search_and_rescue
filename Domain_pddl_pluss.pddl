@@ -37,41 +37,29 @@
 (:types robot room victim)
 
 (:predicates
-    ; --- Spatial state ---
     (at ?r - robot ?loc - room)
     (connected ?from - room ?to - room)
-
-    ; --- Victim state ---
     (victim-at ?v - victim ?loc - room)
-    (stabilized ?v - victim)             ; health decay stops once stabilized
+    (stabilized ?v - victim)            
     (alive ?v - victim)
-    (victim-dead ?v - victim)            ; set by victim-death event; blocks all actions
+    (victim-dead ?v - victim)            
 
-    ; --- Transport state ---
     (carrying ?r - robot ?v - victim)
     (safe ?loc - room)
 
-    ; --- In-progress flags (used by processes and events) ---
-    (moving ?r - robot)                          ; move task is in progress
-    (stabilizing ?r - robot)                     ; stabilize task is in progress
-    (move-dest ?r - robot ?loc - room)           ; intended destination of current move
-    (stabilize-target ?r - robot ?v - victim)    ; victim being stabilized
-)
+    (moving ?r - robot)
+    (stabilizing ?r - robot)
+    (move-dest ?r - robot ?loc - room)
+    (stabilize-target ?r - robot ?v - victim)
 
 (:functions
-    (health ?v - victim)            ; victim survivability; decays at 1.0/sec
-    (move-progress ?r - robot)      ; seconds elapsed in current move task
-    (stabilize-progress ?r - robot) ; seconds elapsed in current stabilize task
-    (move-duration)                 ; required seconds to complete a move (constant)
-    (stabilize-duration)            ; required seconds to complete stabilization (constant)
+    (health ?v - victim)
+    (move-progress ?r - robot)
+    (stabilize-progress ?r - robot)
+    (move-duration)
+    (stabilize-duration)
 )
 
-; ---------------------------------------------------------------------------
-; PROCESS: health-decay
-; Runs continuously while the victim is alive and not yet stabilized.
-; Decrement rate: 1.0 health unit per second.
-; Stops automatically once (stabilized ?v) is true (precondition fails).
-; ---------------------------------------------------------------------------
 (:process health-decay
     :parameters (?v - victim)
     :precondition (and
@@ -82,11 +70,6 @@
     :effect (decrease (health ?v) (* #t 1.0))
 )
 
-; ---------------------------------------------------------------------------
-; PROCESS: moving-progress
-; Advances the move timer while a move task is active.
-; Rate: 1.0 second of progress per real second elapsed.
-; ---------------------------------------------------------------------------
 (:process moving-progress
     :parameters (?r - robot ?v - victim)
     :precondition (and
@@ -96,11 +79,7 @@
     :effect (increase (move-progress ?r) (* #t 1.0))
 )
 
-; ---------------------------------------------------------------------------
-; PROCESS: stabilizing-progress
-; Advances the stabilization timer while a stabilize task is active.
-; Rate: 1.0 second of progress per real second elapsed.
-; ---------------------------------------------------------------------------
+
 (:process stabilizing-progress
     :parameters (?r - robot ?v - victim)
     :precondition (and
@@ -110,12 +89,7 @@
     :effect (increase (stabilize-progress ?r) (* #t 1.0))
 )
 
-; ---------------------------------------------------------------------------
-; EVENT: move-complete
-; Fires when move progress reaches the required duration.
-; Teleports the robot to its destination, clears the moving flag,
-; and resets the progress counter for the next task.
-; ---------------------------------------------------------------------------
+
 (:event move-complete
     :parameters (?r - robot ?to - room)
     :precondition (and
@@ -131,13 +105,6 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; EVENT: stabilize-complete
-; Fires when stabilization progress reaches the required duration.
-; Marks the victim as stabilized (halting health-decay) and resets the counter.
-; Requires victim to still be alive — if the victim died mid-stabilization
-; (health-decay fired victim-death first), this event never triggers.
-; ---------------------------------------------------------------------------
 (:event stabilize-complete
     :parameters (?r - robot ?v - victim)
     :precondition (and
@@ -154,16 +121,6 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; EVENT: victim-death
-; Fires when health drops to or below 0.5 (the death threshold).
-; Sets victim-dead, which is a negative precondition on every action.
-; This forces the planner to treat the current branch as a dead end
-; rather than searching indefinitely for an unreachable goal.
-;
-; The 0.5 threshold (rather than 0.0) guards against floating-point
-; under-stepping in the numeric integrator used by ENHSP.
-; ---------------------------------------------------------------------------
 (:event victim-death
     :parameters (?v - victim)
     :precondition (and
@@ -176,13 +133,6 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; ACTION: start-move
-; Initiates a move task from ?from toward ?to.
-; The robot leaves ?from immediately (it is in transit) but does not arrive
-; at ?to until the move-complete event fires after move-duration seconds.
-; Preconditions prevent starting a move while already moving or stabilizing.
-; ---------------------------------------------------------------------------
 (:action start-move
     :parameters (?r - robot ?from ?to - room ?v - victim)
     :precondition (and
@@ -201,12 +151,7 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; ACTION: start-stabilize
-; Begins stabilizing the victim at the robot's current location.
-; Health decay continues during stabilization — if health reaches 0.5
-; before stabilize-complete fires, the victim dies and the plan fails.
-; ---------------------------------------------------------------------------
+
 (:action start-stabilize
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and
@@ -225,11 +170,7 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; ACTION: pickup (instantaneous)
-; Robot picks up the stabilized victim. Requires stabilization to be complete
-; (health decay has already stopped), so this action does not consume health.
-; ---------------------------------------------------------------------------
+
 (:action pickup
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and
@@ -247,12 +188,6 @@
     )
 )
 
-; ---------------------------------------------------------------------------
-; ACTION: drop (instantaneous)
-; Robot places the victim at a safe location, completing the rescue.
-; Health decay is already stopped (victim is stabilized), so timing of
-; this action does not affect survival.
-; ---------------------------------------------------------------------------
 (:action drop
     :parameters (?r - robot ?v - victim ?loc - room)
     :precondition (and

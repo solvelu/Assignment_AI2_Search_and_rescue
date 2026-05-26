@@ -40,37 +40,29 @@
 )
 
 (:init
-    ; Robot starts at the safe exit room
     (at r1 roomA)
 
-    ; Single bidirectional corridor
     (connected roomA roomD)
     (connected roomD roomA)
 
-    ; Victim is alive and at the far room
     (victim-at v1 roomD)
     (alive v1)
 
-    ; Safe drop-off point
     (safe roomA)
-
-    ; Initial health — 8.0 gives a 1.0-unit survival margin.
-    ; Change to 6.0 to observe the infeasible (victim-death) case.
-    (= (health v1)             8.0)
+    (= (health v1) 8.0)
 
     ; Task progress counters start at zero
-    (= (move-progress r1)      0.0)
+    (= (move-progress r1) 0.0)
     (= (stabilize-progress r1) 0.0)
 
-    ; Task durations (seconds)
-    (= (move-duration)         3.0)
-    (= (stabilize-duration)    4.0)
+    (= (move-duration) 3.0)
+    (= (stabilize-duration) 4.0)
 )
 
 (:goal (and
-    (victim-at v1 roomA)    ; victim delivered to safe exit
-    (stabilized v1)         ; victim was stabilized before transport
-    (alive v1)              ; victim survived the rescue
+    (victim-at v1 roomA)
+    (stabilized v1)
+    (alive v1)
 ))
 
 )

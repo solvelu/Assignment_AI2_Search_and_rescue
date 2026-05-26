@@ -4,7 +4,7 @@
 ; Scenario:
 ;   The robot starts in roomA. The victim is in roomB, directly adjacent.
 ;   roomA is the safe exit. The shortest possible rescue path is:
-;     move → stabilize → pickup → move → drop  (5 actions)
+;     move stabilize pickup move drop  (5 actions)
 ;
 ; This is the minimal instance: one robot, one victim, two rooms, one edge.
 ; It is used to verify basic domain correctness and to confirm that the
@@ -21,30 +21,26 @@
 (define (problem simple_rescue)
 (:domain rescue_single_robot)
 
-(:objects
-    r1      - robot
-    v1      - victim
-    roomA
-    roomB   - room
+(:objects 
+    r1 - robot
+    v1 - victim
+    roomA roomB - room
 )
 
 (:init
-    ; Robot starts at the safe exit room
     (at r1 roomA)
     (connected roomA roomB)
     (connected roomB roomA)
 
-    ; Victim is in the far room and needs stabilization
     (victim-at v1 roomB)
     (injured v1)
 
-    ; roomA is the designated safe drop-off point
     (safe roomA)
 )
 
 (:goal (and
-    (victim-at v1 roomA)    ; victim delivered to safe exit
-    (stabilized v1)         ; victim was stabilized before transport
+    (victim-at v1 roomA)    
+    (stabilized v1)   
 ))
 
 )
