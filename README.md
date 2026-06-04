@@ -30,7 +30,7 @@ The environment is static and no hazards evolve over time (in the classical mode
 
 ### Domain design (`domain.pddl`)
 
-The domain models four actions that must be composed in a specific order. That order is **not hard-coded** -- it emerges naturally from the preconditions of each action:
+The domain models four actions that must be composed in a specific order. The order emerges naturally from the preconditions of each action, and is not a hard-coded rescue:
 
 | Action | Key preconditions | Key effects |
 |---|---|---|
@@ -82,7 +82,7 @@ Four rooms in a linear chain: `roomA - roomB - roomC - roomD`. The victim is in 
 
 ### Domain design (`Domain_pddl_pluss.pddl`)
 
-The PDDL+ domain augments the classical model with **processes** (continuous change over time) and **events** (instantaneous state changes triggered by conditions). Actions that were atomic in Q1 are split into a start action and a completion event, so they genuinely occupy time and allow other continuous changes to interleave.
+The PDDL+ domain augments the classical model with **processes** (continuous change over time) and **events** (instantaneous state changes triggered by conditions). Actions that were atomic in Q1 are split into a start action and a completion event, so they occupy time and allow other continuous changes to interleave.
 
 #### Processes
 
@@ -137,7 +137,7 @@ The victim survives with health = 1.0. Setting the initial health to 6.0 causes 
 10.0: (drop r1 v1 roomA)
 ```
 
-### How to run (PDDL+)
+### How to run with local planner (PDDL+)
 
 ```bash
 java -jar enhsp-20.jar -o Domain_pddl_pluss.pddl -f Problem_pddl_pluss.pddl -planner opt-blind -delta 0.5
@@ -157,9 +157,9 @@ The choice to model victim state as a pair of predicates (`injured` / `stabilize
 
 ### Discussion point 1: Differences between discrete and continuous energy (health) modelling
 
-In the **classical Q1 model**, victim health is implicit. The victim is either `injured` or `stabilized`, and there is no health value that changes over time. The planner reasons purely over discrete state transitions, and any valid sequence of actions that achieves the goal is acceptable regardless of how long it takes. A plan requiring 100 moves is treated identically to one requiring 3 -- time has no cost.
+In the **classical PDDL model**, victim health is implicit. The victim is either `injured` or `stabilized`, and there is no health value that changes over time. The planner reasons purely over discrete state transitions, and any valid sequence of actions that achieves the goal is acceptable regardless of how long it takes. A plan requiring 100 moves is treated identically to one requiring 3 -- time has no cost.
 
-In the **PDDL+ Q2 model**, health is an explicit numeric fluent that decreases continuously via a process running in parallel with the robot's actions. This changes the nature of planning fundamentally:
+In the **PDDL+ model**, health is an explicit numeric fluent that decreases continuously via a process running in parallel with the robot's actions. This changes the nature of planning fundamentally:
 
 - **Time is a resource.** Every second the robot spends moving costs the victim health. The planner must find not just a logically correct sequence but a fast enough one.
 - **Plans can become invalid mid-execution.** A plan that is valid at t = 0 may be invalidated at t = 6 if the robot has not yet stabilized the victim. The `victim-death` event represents this continuous invalidation risk.
@@ -192,13 +192,13 @@ The structural difference between the two planning paradigms is therefore:
 
 ### Limitations of the abstractions
 
-**Q1 (classical model):**
+**Q1 (PDDL):**
 - **No time or urgency.** All actions are instantaneous. This is appropriate for correctness checking but not real deployment.
 - **Single victim, single robot.** The domain does not scale without significant extension.
 - **Binary victim state.** No representation of deterioration during rescue, partial stabilization, or re-injury.
 - **No partial observability.** The room graph and victim location are fully known at planning time, which does not reflect real disaster environments.
 
-**Q2 (PDDL+ model):**
+**Q2 (PDDL+):**
 - **Simplified health model.** Health decays linearly at a fixed rate. Real physiological deterioration is non-linear and depends on injury type and environment.
 - **Fixed task durations.** Travel time and stabilization time are constants. In reality both depend on terrain, distance, and injury severity.
 - **Death is a hard threshold.** There is no modelling of a critical-but-survivable intermediate state between healthy and dead.

@@ -8,12 +8,12 @@
 ; Health budget (health decays at 1.0/sec while victim is alive and unstabilized):
 ;
 ;   t =  0.0  start-move r1 roomA -> roomD       health = 8.0
-;   t =  3.0  move-complete (arrive roomD)        health = 8 - 3 = 5.0
+;   t =  3.0  move-complete (arrive roomD)       health = 8 - 3 = 5.0
 ;   t =  3.0  start-stabilize r1 v1              health = 5.0
 ;   t =  7.0  stabilize-complete                 health = 5 - 4 = 1.0  (decay stops)
 ;   t =  7.0  pickup r1 v1                       health = 1.0
 ;   t =  7.0  start-move r1 roomD -> roomA       health = 1.0  (no decay; stabilized)
-;   t = 10.0  move-complete (arrive roomA)        health = 1.0
+;   t = 10.0  move-complete (arrive roomA)       health = 1.0
 ;   t = 10.0  drop r1 v1 roomA                   health = 1.0  RESCUED ✓
 ;
 ; The victim survives with exactly 1.0 health unit remaining.
@@ -51,7 +51,6 @@
     (safe roomA)
     (= (health v1) 8.0)
 
-    ; Task progress counters start at zero
     (= (move-progress r1) 0.0)
     (= (stabilize-progress r1) 0.0)
 

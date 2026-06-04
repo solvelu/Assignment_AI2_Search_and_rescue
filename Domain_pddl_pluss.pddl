@@ -3,7 +3,7 @@
 ; This domain extends the classical rescue model (domain.pddl) with continuous
 ; time, making victim survival genuinely time-dependent.
 ;
-; Key design decisions:
+; Design notes:
 ;
 ;   1. Move and stabilize are split into a start-action / completion-event pair.
 ;      The start action launches the task (sets a flag and resets a progress
@@ -22,7 +22,6 @@
 ;      This is preferable to letting the planner search indefinitely in a state
 ;      where no goal-achieving action remains.
 ;
-;   4. Pickup and drop remain instantaneous (no process/event pair needed).
 ;
 ; Timing model summary:
 ;   - move-duration and stabilize-duration are numeric constants set in the
@@ -51,6 +50,7 @@
     (stabilizing ?r - robot)
     (move-dest ?r - robot ?loc - room)
     (stabilize-target ?r - robot ?v - victim)
+)
 
 (:functions
     (health ?v - victim)

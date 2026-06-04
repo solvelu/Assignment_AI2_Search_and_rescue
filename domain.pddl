@@ -4,7 +4,7 @@
 ; The robot must navigate to an injured victim, stabilize them, carry them to a
 ; safe exit room, and drop them there.
 ;
-; Design rationale:
+; Design notes:
 ;   - Actions are kept deliberately fine-grained (move, stabilize, pickup, drop)
 ;     rather than collapsed into a single "rescue" action. This ensures the correct
 ;     task ordering emerges from preconditions alone, making the domain general
@@ -13,8 +13,7 @@
 ;     A victim starts injured; stabilize transitions them to stabilized; pickup
 ;     requires stabilized. This chain enforces the medically correct sequence
 ;     without explicitly encoding ordering constraints.
-;   - No time or numeric fluents are used. All actions are instantaneous.
-;     See Domain_pddl_pluss.pddl for a time-aware extension.
+
 
 (define (domain rescue_single_robot)
 
