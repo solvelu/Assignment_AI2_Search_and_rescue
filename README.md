@@ -204,3 +204,6 @@ The structural difference between the two planning paradigms is therefore:
 - **Death is a hard threshold.** There is no modelling of a critical-but-survivable intermediate state between healthy and dead.
 - **No robot resource constraints.** The robot can act indefinitely without recharging or resupply.
 - **Discrete time steps.** ENHSP operates with a configurable delta (here 0.5 s). Events that should fire between steps may fire slightly late, introducing small numeric errors. A smaller delta increases accuracy at the cost of computation time.
+
+## Observation
+The submitted codes and report have been thoroughly reviewed by the teaching assistant, Omar Kashmar.
